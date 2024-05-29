@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -16,9 +17,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
-import lombok.Data;
-
-@Data
 public class Server {
 
 	// 서버 소켓
@@ -51,7 +49,6 @@ public class Server {
 	private String roomName;
 
 	private int roomUsers;
-	private Vote vote;
 
 	// 오류 아이콘
 	private ImageIcon icon = new ImageIcon("images/error_Icon.png");
@@ -119,14 +116,13 @@ public class Server {
 		for (ConnectingUser user : connectingUsers) {
 			user.writer(msg);
 		}
-		serverLogWriter(msg);
 	}
 
 	private void serverLogWriter(String str) {
 		try {
+			mainTextArea.append(str);
 			logWriter = new FileWriter("LOG.txt", true);
 			String now = dateFormat.format(new Date());
-			mainTextArea.append(str);
 			logWriter.write(now + " :: " + str);
 			logWriter.flush();
 		} catch (Exception e) {
@@ -186,6 +182,7 @@ public class Server {
 					checkProtocol(str);
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				JOptionPane.showMessageDialog(null, "유저 접속 끊김 !", "알림", JOptionPane.ERROR_MESSAGE, icon);
 				serverLogWriter("! ! 유저 " + id + " 접속 끊김 ! !\n");
 				for (Room room : rooms) {
@@ -201,8 +198,17 @@ public class Server {
 		private void checkProtocol(String str) {
 			StringTokenizer tokenizer = new StringTokenizer(str, "/");
 
-			protocol = tokenizer.nextToken();
-			from = tokenizer.nextToken();
+			if (tokenizer.hasMoreTokens()) {
+				protocol = tokenizer.nextToken();
+			} else {
+				return;
+			}
+
+			if (tokenizer.hasMoreTokens()) {
+				from = tokenizer.nextToken();
+			} else {
+				return;
+			}
 
 			if (protocol.equals("Chatting")) {
 				message = tokenizer.nextToken();
@@ -224,14 +230,11 @@ public class Server {
 			} else if (protocol.equals("DeleteRoom")) {
 				deleteRoom();
 
-			} else if (protocol.equals("kickVote")) {
-
 			}
 		}
 
 		private void writer(String str) {
 			try {
-				System.out.println(str);
 				writer.write(str + "\n");
 				writer.flush();
 			} catch (Exception e) {
@@ -291,7 +294,6 @@ public class Server {
 					room.addUser(this);
 					room.roomBroadCast("Chatting/입장/" + id + "님 입장");
 					serverLogWriter("[입장]" + from + "방_" + id + "\n");
-					roomUsers = room.size();
 					writer("EnterRoom/" + from + "\n");
 				}
 			}
@@ -301,18 +303,29 @@ public class Server {
 		public void exitRoom() {
 			for (Room room : rooms) {
 				if (room.roomName.equals(from)) {
-					rooms = null;
 					room.roomBroadCast("Chatting/퇴장/" + id + "님 퇴장");
 					serverLogWriter("[방 퇴장]" + id + "-" + from + "\n");
-					writer("OurRoom/" + from + "\n");
+					writer("ExitRoom/" + from + "\n");
 				}
 			}
 		}
 
+//		@Override
+//		public void deleteRoom() {
+//			for (Room room : rooms) {
+//				if (room.roomName.equals(from)) {
+//					room.removeRoom(this);
+//				}
+//			}
+//		}
+
 		@Override
 		public void deleteRoom() {
-			for (Room room : rooms) {
+			Iterator<Room> iterator = rooms.iterator();
+			while (iterator.hasNext()) {
+				Room room = iterator.next();
 				if (room.roomName.equals(from)) {
+					iterator.remove();
 					room.removeRoom(this);
 				}
 			}
@@ -335,11 +348,6 @@ public class Server {
 			connectingUsers.add(this);
 			broadCast("NewUser/" + id + " " + "\n");
 		}
-
-		@Override
-		public void kickVote() {
-		}
-
 	}
 
 	private class Room {
@@ -350,10 +358,6 @@ public class Server {
 			this.roomName = roomName;
 			this.room.add(connectingUser);
 			connectingUser.RoomName = roomName;
-		}
-
-		public int size() {
-			return room.size();
 		}
 
 		private void roomBroadCast(String msg) {

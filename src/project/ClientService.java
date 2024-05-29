@@ -14,6 +14,4 @@ public interface ClientService {
 	void clickEnterRoomBtn(String roomName);
 
 	void clickDeleteRoomBtn(String roomName);
-
-	void clickKickVoteBtn(String id);
 }

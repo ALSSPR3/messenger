@@ -9,22 +9,20 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class ChattingRoomPanel extends JPanel {
 
 	private Image backgroundImage;
@@ -44,7 +42,7 @@ public class ChattingRoomPanel extends JPanel {
 	// 버튼
 	private JButton sendBtn;
 	private JButton exitBtn;
-	private JButton kickBtn;
+	private JButton whisperBtn;
 
 	// 유저 List
 	private JList<String> roomUserList;
@@ -74,9 +72,9 @@ public class ChattingRoomPanel extends JPanel {
 		chatingBox = new JTextArea();
 		msgBox = new JTextField(17);
 
-		sendBtn = new JButton("send");
-		exitBtn = new JButton("exit");
-		kickBtn = new JButton("kick");
+		sendBtn = new JButton("전송");
+		exitBtn = new JButton("나가기");
+		whisperBtn = new JButton("귓속말");
 	}
 
 	private void setInitLayout() {
@@ -117,9 +115,14 @@ public class ChattingRoomPanel extends JPanel {
 		btnPanel.setBorder(new TitledBorder(new LineBorder(Color.black, 3)));
 		btnPanel.setBackground(Color.white);
 		exitBtn.setPreferredSize(new Dimension(80, 20));
-		kickBtn.setPreferredSize(new Dimension(80, 20));
+		whisperBtn.setPreferredSize(new Dimension(80, 20));
 		btnPanel.add(exitBtn);
-		btnPanel.add(kickBtn);
+		btnPanel.add(whisperBtn);
+
+		msgBox.setEnabled(false);
+		whisperBtn.setEnabled(false);
+		sendBtn.setEnabled(false);
+		exitBtn.setEnabled(false);
 
 		add(btnPanel);
 
@@ -148,13 +151,12 @@ public class ChattingRoomPanel extends JPanel {
 			}
 		});
 
-		kickBtn.addMouseListener(new MouseAdapter() {
+		whisperBtn.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				kick();
+				Whisper();
 			}
 		});
-
 	}
 
 	private void sendMessage() {
@@ -168,24 +170,19 @@ public class ChattingRoomPanel extends JPanel {
 
 	private void exit() {
 		clientService.clickExitRoomBtn();
-		roomUserList.remove(this);
+		chatingBox.setText("");
 		msgBox.setEnabled(false);
+		whisperBtn.setEnabled(false);
+		sendBtn.setEnabled(false);
+		exitBtn.setEnabled(false);
+		roomUserList.remove(this);
 	}
 
-	private void kick() {
-		if (!(roomUserList.getSelectedValue().equals(null))) {
-			String user = roomUserList.getSelectedValue();
-			clientService.clickKickVoteBtn(user);
-			Vote vote = new Vote();
-			int size = roomUserList.getModel().getSize();
-			try {
-				String voteResult = vote.Vote(size);
-				if (voteResult.equals("APPROVED")) {
-					exit();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	private void Whisper() {
+		String msg = JOptionPane.showInputDialog("[ 귓 속말 ]");
+		if (!msg.equals(null)) {
+			clientService.clickSendwhisperBtn(msg);
+			roomUserList.setSelectedValue(null, false);
 		}
 	}
 

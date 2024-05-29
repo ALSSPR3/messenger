@@ -5,11 +5,10 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.border.EmptyBorder;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-@Getter
-@Setter
+@Data
 public class ClientFrame extends JFrame {
 
 	private JTabbedPane tabPane;
@@ -38,7 +37,7 @@ public class ClientFrame extends JFrame {
 	private void setInitLayout() {
 		setTitle("Chatting");
 		setSize(400, 500);
-//		setResizable(false);
+		setResizable(false);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

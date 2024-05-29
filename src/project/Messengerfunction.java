@@ -19,6 +19,4 @@ public interface Messengerfunction {
 	void connetingUserList();
 
 	void deleteRoom();
-
-	void kickVote();
 }

@@ -14,12 +14,8 @@ import javax.swing.JButton;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 public class Client implements Messengerfunction, ClientService {
 
 	// 프레임
@@ -27,6 +23,7 @@ public class Client implements Messengerfunction, ClientService {
 
 	// 프레임에서 사용하는 멤버변수
 	private JTextArea chatingBox;
+	private JTextField chatMsgBox;
 	private JList<String> userList;
 	private JList<String> roomList;
 	private JList<String> roomUserList;
@@ -36,7 +33,7 @@ public class Client implements Messengerfunction, ClientService {
 	private JButton whisperBtn;
 	private JButton sendMsgRoomBtn;
 	private JButton exitRoomBtn;
-	private JButton kickVoteBtn;
+	private JButton chattingWhisperBtn;
 
 	// 소켓
 	private Socket socket;
@@ -47,7 +44,7 @@ public class Client implements Messengerfunction, ClientService {
 	private String id;
 	private String roomName;
 	private int roomNumber;
-	private Vector<String> userIDList = new Vector<>();
+	private Vector<String> userIdList = new Vector<>();
 	private Vector<String> roomNameList = new Vector<>();
 
 	// Tokenizer 변수
@@ -67,17 +64,18 @@ public class Client implements Messengerfunction, ClientService {
 
 	public Client() {
 		clientFrame = new ClientFrame(this);
-		chatingBox = clientFrame.getChattingRoomPanel().getChatingBox();
 		userList = clientFrame.getWattingRoomPanel().getUserList();
 		roomList = clientFrame.getWattingRoomPanel().getRoomList();
 		makeRoomBtn = clientFrame.getWattingRoomPanel().getMakeRoomBtn();
 		enterRoomBtn = clientFrame.getWattingRoomPanel().getEnterRoomBtn();
 		deleteRoomBtn = clientFrame.getWattingRoomPanel().getDeleteRoomBtn();
 		whisperBtn = clientFrame.getWattingRoomPanel().getWhisperBtn();
+		chatingBox = clientFrame.getChattingRoomPanel().getChatingBox();
+		chatMsgBox = clientFrame.getChattingRoomPanel().getMsgBox();
 		roomUserList = clientFrame.getChattingRoomPanel().getRoomUserList();
 		sendMsgRoomBtn = clientFrame.getChattingRoomPanel().getSendBtn();
 		exitRoomBtn = clientFrame.getChattingRoomPanel().getExitBtn();
-		kickVoteBtn = clientFrame.getChattingRoomPanel().getKickBtn();
+		chattingWhisperBtn = clientFrame.getChattingRoomPanel().getWhisperBtn();
 
 		this.dataFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	}
@@ -97,9 +95,9 @@ public class Client implements Messengerfunction, ClientService {
 
 			clientFrame.getLoginPanel().getConnectBtn().setEnabled(false);
 			makeRoomBtn.setEnabled(true);
-			enterRoomBtn.setEnabled(false);
-			deleteRoomBtn.setEnabled(false);
-			whisperBtn.setEnabled(false);
+			enterRoomBtn.setEnabled(true);
+			deleteRoomBtn.setEnabled(true);
+			whisperBtn.setEnabled(true);
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, "접속 에러 !", "알림", JOptionPane.ERROR_MESSAGE, icon);
 		}
@@ -177,6 +175,8 @@ public class Client implements Messengerfunction, ClientService {
 			enterRoom();
 		} else if (protocol.equals("DeleteRoom")) {
 			deleteRoom();
+		} else if (protocol.equals("ExitRoom")) {
+			exitRoom();
 		} else if (protocol.equals("NewRoom")) {
 			newRoom();
 		} else if (protocol.equals("NewUser")) {
@@ -190,11 +190,10 @@ public class Client implements Messengerfunction, ClientService {
 			enterRoomBtn.setEnabled(true);
 			deleteRoomBtn.setEnabled(false);
 		} else if (protocol.equals("FailMakeRoom")) {
-			JOptionPane.showMessageDialog(null, from + "님의 메세지\n\"" + message + "\"", "[비밀메세지]",
-					JOptionPane.PLAIN_MESSAGE);
-		} else if (protocol.equals("UserExit")) {
-			userIDList.remove(from);
-			userList.setListData(userIDList);
+			JOptionPane.showMessageDialog(null, "같은 이름의 방이 존재합니다 !", "[알림]", JOptionPane.ERROR_MESSAGE, icon);
+		} else if (protocol.equals("UserOut")) {
+			userIdList.remove(from);
+			userList.setListData(userIdList);
 		}
 
 	}
@@ -219,18 +218,16 @@ public class Client implements Messengerfunction, ClientService {
 
 	@Override
 	public void makeRoom() {
-		roomName = from;
-		makeRoomBtn.setEnabled(false);
-		enterRoomBtn.setEnabled(false);
-		deleteRoomBtn.setEnabled(false);
+		roomNameList.add(from);
+		if (roomNameList.size() != 0) {
+			roomList.setListData(roomNameList);
+		}
 	}
 
 	@Override
 	public void newRoom() {
 		roomNameList.add(from);
-		if (roomNameList.size() != 0) {
-			roomList.setListData(roomNameList);
-		}
+		roomList.setListData(roomNameList);
 	}
 
 	@Override
@@ -239,42 +236,42 @@ public class Client implements Messengerfunction, ClientService {
 		makeRoomBtn.setEnabled(false);
 		enterRoomBtn.setEnabled(false);
 		deleteRoomBtn.setEnabled(false);
-		userIDList.add(from);
-		roomUserList.setListData(userIDList);
+		chatingBox.setEnabled(false);
+		chatMsgBox.setEditable(true);
+		chattingWhisperBtn.setEnabled(true);
+		sendMsgRoomBtn.setEnabled(true);
+		exitRoomBtn.setEnabled(true);
+		userIdList.add(from);
+		roomUserList.setListData(userIdList);
 	}
 
 	@Override
 	public void deleteRoom() {
-		if (clientFrame.getChattingRoomPanel().getRoomUserList() != null) {
-			roomList = null;
-			makeRoomBtn.setEnabled(true);
-			enterRoomBtn.setEnabled(true);
-			deleteRoomBtn.setEnabled(false);
-		}
+		roomName = null;
+		makeRoomBtn.setEnabled(true);
+		enterRoomBtn.setEnabled(true);
+		deleteRoomBtn.setEnabled(false);
 	}
 
 	@Override
 	public void exitRoom() {
-
+		makeRoomBtn.setEnabled(true);
+		enterRoomBtn.setEnabled(true);
+		deleteRoomBtn.setEnabled(true);
 	}
 
 	@Override
 	public void newUser() {
 		if (!from.equals(this.id)) {
-			userIDList.add(from);
-			userList.setListData(userIDList);
+			userIdList.add(from);
+			userList.setListData(userIdList);
 		}
 	}
 
 	@Override
 	public void connetingUserList() {
-		userIDList.add(from);
-		userList.setListData(userIDList);
-	}
-
-	@Override
-	public void kickVote() {
-
+		userIdList.add(from);
+		userList.setListData(userIdList);
 	}
 
 	@Override
@@ -295,8 +292,7 @@ public class Client implements Messengerfunction, ClientService {
 
 	@Override
 	public void clickExitRoomBtn() {
-		String thisRoomName = (String) clientFrame.getWattingRoomPanel().getRoomList().getSelectedValue();
-		writer("ExitRoom/" + thisRoomName);
+		writer("ExitRoom/");
 	}
 
 	@Override
@@ -307,11 +303,6 @@ public class Client implements Messengerfunction, ClientService {
 	@Override
 	public void clickDeleteRoomBtn(String roomName) {
 		writer("DeleteRoom/" + roomName);
-	}
-
-	@Override
-	public void clickKickVoteBtn(String id) {
-		writer("kickVote/" + id);
 	}
 
 	public static void main(String[] args) {

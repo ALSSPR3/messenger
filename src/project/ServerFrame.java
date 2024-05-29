@@ -67,7 +67,7 @@ public class ServerFrame extends JFrame {
 	private void setInitLayout() {
 		setTitle("메신저");
 		setSize(500, 500);
-//		setResizable(false);
+		setResizable(false);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(null);
