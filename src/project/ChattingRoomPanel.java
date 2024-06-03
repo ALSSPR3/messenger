@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.ScrollPane;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -23,7 +25,7 @@ import javax.swing.border.TitledBorder;
 import lombok.Data;
 
 @Data
-public class ChattingRoomPanel extends JPanel {
+public class ChattingRoomPanel extends JPanel implements ActionListener {
 
 	private Image backgroundImage;
 	private JPanel backgroundPanel;
@@ -119,7 +121,6 @@ public class ChattingRoomPanel extends JPanel {
 		btnPanel.add(exitBtn);
 		btnPanel.add(whisperBtn);
 
-		msgBox.setEnabled(false);
 		whisperBtn.setEnabled(false);
 		sendBtn.setEnabled(false);
 		exitBtn.setEnabled(false);
@@ -129,12 +130,6 @@ public class ChattingRoomPanel extends JPanel {
 	}
 
 	private void addEventListener() {
-		sendBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				sendMessage();
-			}
-		});
 		msgBox.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
@@ -143,20 +138,22 @@ public class ChattingRoomPanel extends JPanel {
 				}
 			}
 		});
+		sendBtn.addActionListener(this);
+		exitBtn.addActionListener(this);
+		whisperBtn.addActionListener(this);
+	}
 
-		exitBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				exit();
-			}
-		});
-
-		whisperBtn.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				Whisper();
-			}
-		});
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == sendBtn) {
+			sendMessage();
+		}
+		if (e.getSource() == exitBtn) {
+			exit();
+		}
+		if (e.getSource() == whisperBtn) {
+			Whisper();
+		}
 	}
 
 	private void sendMessage() {
@@ -171,11 +168,9 @@ public class ChattingRoomPanel extends JPanel {
 	private void exit() {
 		clientService.clickExitRoomBtn();
 		chatingBox.setText("");
-		msgBox.setEnabled(false);
 		whisperBtn.setEnabled(false);
 		sendBtn.setEnabled(false);
 		exitBtn.setEnabled(false);
-		roomUserList.remove(this);
 	}
 
 	private void Whisper() {

@@ -7,6 +7,8 @@ public interface Messengerfunction {
 	void whisper(); // 귓속말
 
 	void makeRoom();
+	
+	void madeRoom();
 
 	void enterRoom();
 

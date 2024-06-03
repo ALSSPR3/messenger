@@ -9,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -106,14 +105,15 @@ public class Server {
 					user.start();
 				} catch (Exception e) {
 					serverLogWriter("--- Client 접속 에러 ---\n");
-					break;
 				}
 			}
 		}).start();
 	}
 
 	private void broadCast(String msg) {
-		for (ConnectingUser user : connectingUsers) {
+		for (int i = 0; i < connectingUsers.size(); i++) {
+			ConnectingUser user = connectingUsers.elementAt(i);
+
 			user.writer(msg);
 		}
 	}
@@ -185,7 +185,8 @@ public class Server {
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(null, "유저 접속 끊김 !", "알림", JOptionPane.ERROR_MESSAGE, icon);
 				serverLogWriter("! ! 유저 " + id + " 접속 끊김 ! !\n");
-				for (Room room : rooms) {
+				for (int i = 0; i < rooms.size(); i++) {
+					Room room = rooms.elementAt(i);
 					if (room.roomName.equals(this.RoomName)) {
 						room.removeRoom(this);
 					}
@@ -198,20 +199,11 @@ public class Server {
 		private void checkProtocol(String str) {
 			StringTokenizer tokenizer = new StringTokenizer(str, "/");
 
-			if (tokenizer.hasMoreTokens()) {
-				protocol = tokenizer.nextToken();
-			} else {
-				return;
-			}
-
-			if (tokenizer.hasMoreTokens()) {
-				from = tokenizer.nextToken();
-			} else {
-				return;
-			}
-
+			protocol = tokenizer.nextToken();
+			from = tokenizer.nextToken();
 			if (protocol.equals("Chatting")) {
 				message = tokenizer.nextToken();
+				System.out.println(message);
 				chatting();
 
 			} else if (protocol.equals("Whisper")) {
@@ -246,8 +238,12 @@ public class Server {
 		public void chatting() {
 			serverLogWriter("[메세지] " + from + " - " + message + "\n");
 
-			for (Room room : rooms) {
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+				System.out.println(1);
+				System.out.println(room.roomName);
 				if (room.roomName.equals(from)) {
+					System.out.println(2);
 					room.roomBroadCast("Chatting/" + id + "/" + message);
 				}
 			}
@@ -255,21 +251,25 @@ public class Server {
 
 		@Override
 		public void whisper() {
-			serverLogWriter("[귓속말] " + id + "->" + from + "-" + message + "\n");
+			serverLogWriter("[귓속말] " + id + " -> " + from + " - " + message + "\n");
 
-			for (ConnectingUser user : connectingUsers) {
+			for (int i = 0; i < connectingUsers.size(); i++) {
+				ConnectingUser user = connectingUsers.elementAt(i);
+
 				if (user.id.equals(from)) {
-					user.writer("Whisper/" + id + "/" + message + "\n");
+					user.writer("Whisper/" + id + "/" + message);
 				}
 			}
 		}
 
 		@Override
 		public void makeRoom() {
-			for (Room room : rooms) {
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+
 				if (room.roomName.equals(from)) {
 					writer("FailMakeRoom/" + from);
-					serverLogWriter("[방 생성 실패]" + id + "-" + from + message + "\n");
+					serverLogWriter("[방 생성 실패]" + id + " - " + from + message + "\n");
 					roomCheck = false;
 				} else {
 					roomCheck = true;
@@ -279,7 +279,7 @@ public class Server {
 				roomName = from;
 				Room room = new Room(from, this);
 				rooms.add(room);
-				serverLogWriter("[방 생성] " + id + "-" + from + "\n");
+				serverLogWriter("[방 생성] " + id + " - " + from + "\n");
 
 				newRoom();
 				writer("MakeRoom/" + from);
@@ -288,65 +288,70 @@ public class Server {
 
 		@Override
 		public void enterRoom() {
-			for (Room room : rooms) {
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+
 				if (room.roomName.equals(from)) {
 					roomName = from;
 					room.addUser(this);
 					room.roomBroadCast("Chatting/입장/" + id + "님 입장");
-					serverLogWriter("[입장]" + from + "방_" + id + "\n");
-					writer("EnterRoom/" + from + "\n");
+					serverLogWriter("[입장] " + from + "방_ " + id + "\n");
+					writer("EnterRoom/" + from);
 				}
 			}
 		}
 
 		@Override
 		public void exitRoom() {
-			for (Room room : rooms) {
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+
 				if (room.roomName.equals(from)) {
 					room.roomBroadCast("Chatting/퇴장/" + id + "님 퇴장");
-					serverLogWriter("[방 퇴장]" + id + "-" + from + "\n");
-					writer("ExitRoom/" + from + "\n");
+					serverLogWriter("[방 퇴장]" + id + " - " + from + "\n");
+					writer("ExitRoom/" + from);
 				}
 			}
 		}
 
-//		@Override
-//		public void deleteRoom() {
-//			for (Room room : rooms) {
-//				if (room.roomName.equals(from)) {
-//					room.removeRoom(this);
-//				}
-//			}
-//		}
-
 		@Override
 		public void deleteRoom() {
-			Iterator<Room> iterator = rooms.iterator();
-			while (iterator.hasNext()) {
-				Room room = iterator.next();
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+
 				if (room.roomName.equals(from)) {
-					iterator.remove();
+					roomName = null;
 					room.removeRoom(this);
+					writer("DeleteRoom/" + from);
 				}
 			}
 		}
 
 		@Override
 		public void newRoom() {
-			broadCast("newRoom/" + from + "\n");
+			broadCast("newRoom/" + from);
 		}
 
 		@Override
 		public void connetingUserList() {
-			for (ConnectingUser user : connectingUsers) {
-				writer("ConnetingUserList/" + user.id + "\n");
+			for (int i = 0; i < connectingUsers.size(); i++) {
+				ConnectingUser user = connectingUsers.elementAt(i);
+				writer("ConnetingUserList/" + user.id);
 			}
 		}
 
 		@Override
 		public void newUser() {
 			connectingUsers.add(this);
-			broadCast("NewUser/" + id + " " + "\n");
+			broadCast("NewUser/" + id);
+		}
+
+		@Override
+		public void madeRoom() {
+			for (int i = 0; i < rooms.size(); i++) {
+				Room room = rooms.elementAt(i);
+				writer("MadeRoom/" + room.roomName);
+			}
 		}
 	}
 
@@ -361,7 +366,9 @@ public class Server {
 		}
 
 		private void roomBroadCast(String msg) {
-			for (ConnectingUser user : room) {
+			for (int i = 0; i < room.size(); i++) {
+				ConnectingUser user = room.elementAt(i);
+
 				user.writer(msg);
 			}
 		}
@@ -374,12 +381,13 @@ public class Server {
 			room.remove(user);
 			boolean empty = room.isEmpty();
 			if (empty) {
-				for (Room room : rooms) {
+				for (int i = 0; i < rooms.size(); i++) {
+					Room room = rooms.elementAt(i);
+
 					if (room.roomName.equals(roomName)) {
 						rooms.remove(this);
-						serverLogWriter("[방 제거]" + user.id + "-" + from + "\n");
-						roomBroadCast("DeleteRoom/" + from + "\n");
-						broadCast("EmptyRoom/" + from + "\n");
+						serverLogWriter("[방 제거]" + user.id + " - " + from + "\n");
+						broadCast("EmptyRoom/" + from);
 						break;
 					}
 				}

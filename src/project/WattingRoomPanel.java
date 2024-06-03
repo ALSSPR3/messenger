@@ -38,6 +38,8 @@ public class WattingRoomPanel extends JPanel implements ActionListener {
 	private JButton whisperBtn;
 
 	private ClientService clientService;
+	
+	private String roomName;
 
 	public WattingRoomPanel(ClientService clientService) {
 		this.clientService = clientService;
@@ -130,7 +132,7 @@ public class WattingRoomPanel extends JPanel implements ActionListener {
 				userList.setSelectedValue(null, false);
 			}
 		} else if (e.getSource() == makeRoomBtn) {
-			String roomName = JOptionPane.showInputDialog("[ 방 이름 ]");
+			roomName = JOptionPane.showInputDialog("[ 방 이름 ]");
 			if (!roomName.equals(null)) {
 				clientService.clickMakeRoomBtn(roomName);
 			}
